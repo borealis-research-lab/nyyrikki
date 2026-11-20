@@ -13,4 +13,6 @@ Nyyrikki has one responsibility: monitor a narrowly selected source of local sec
 - Keep all technical identifiers (names, paths, variables, config keys, branches) ASCII-only.
 - Update documentation when scope or behaviour changes.
 
+Nyyrikki is a Specialist Agent in [Borealis Architecture v1](https://github.com/borealis-research-lab/.github/blob/main/architecture/borealis-architecture-v1.md). Follow that document, but do not build Node, Core or Worker functionality in this repository: Nyyrikki must stay independently runnable.
+
 Run tests with `python -m pytest`.
