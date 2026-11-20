@@ -117,6 +117,11 @@ def to_text(report: dict[str, Any]) -> str:
             "Evidence references:",
             f"  {len(evidence)} event(s), record IDs: {_ranges([i['record_id'] for i in evidence if 'record_id' in i])}",
         ]
+        for warning in finding.get("data_warnings", []):
+            lines += [
+                "Data warning:",
+                f"  Field {warning['field']} in record(s) {_ranges(warning['record_ids'])} {warning['warning']}.",
+            ]
         if finding.get("interpretation"):
             lines += ["AI interpretation (local model; not evidence, verify against the records):",
                       f"  {finding['interpretation']}"]
