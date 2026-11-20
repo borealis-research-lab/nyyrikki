@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Local environment and secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local logs
+*.log
+logs/
+
+# Model weights and large local model artefacts
+models/
+*.gguf
+*.ggml
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
