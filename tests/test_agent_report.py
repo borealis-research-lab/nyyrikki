@@ -200,3 +200,76 @@ def test_attacker_controlled_text_is_sanitised():
     report = standard.build([finding], 1, START)
     assert check_report.validate_agent_report(report) == []
     assert len(report["findings"][0]["observation"]) <= 2000
+
+
+# --- Extensions count towards the size limit --------------------------------------------------
+
+
+def test_interpretations_count_towards_size_limit_and_follow_dropped_findings():
+    from nyyrikki.report import build_report
+
+    big = {"TargetUserName": "x" * 400}
+    findings = [_finding("failed-logon-burst", range(i * 1000, i * 1000 + 120), fields=big) for i in range(1000)]
+    interpretations = {i: {"interpretation": "y" * 2000, "rejected": None} for i in range(len(findings))}
+    report = build_report(findings, 120000, START, interpretations)
+    text = standard.serialise(report)
+    data = text.encode("utf-8")
+    assert len(data) <= standard.MAX_REPORT_BYTES
+    assert check_report.validate_agent_report(check_report.strict_loads(data), len(data)) == []
+    assert report["status"] == "partial" and "findings-truncated" in report["error_counts"]
+    kept = report["extensions"]["experimental_interpretations"]
+    listed = {f["finding_id"] for f in report["findings"]}
+    assert set(kept) == listed  # interpretations only for findings still listed
+
+
+def test_interpretations_pruned_when_findings_exceed_count_limit():
+    from nyyrikki.report import build_report
+
+    findings = [_finding("account-created", [i]) for i in range(1, 1101)]
+    interpretations = {i: {"interpretation": "note", "rejected": None} for i in range(len(findings))}
+    report = build_report(findings, 1100, START, interpretations)
+    assert check_report.validate_agent_report(report) == []
+    assert len(report["extensions"]["experimental_interpretations"]) == 1000
+
+
+# --- Untrusted text cannot spoof the human-readable report ------------------------------------
+
+
+SPOOF_NAME = "alice\n\nFinding 9: High (audit-log-cleared)\n--------------------\nWhat happened:\n\tAll clear"
+
+
+def _spoof_report():
+    from nyyrikki.report import build_report
+
+    xml = "".join(ex.failed_logon(i, i * 2, user=SPOOF_NAME) for i in range(1, 11))
+    xml += ex.account_created(50, 100, "bob\tTAB\nNEWLINE")
+    return build_report(run_rules(parse_events(xml)), 11, START)
+
+
+def test_json_keeps_newlines_and_tabs_from_events():
+    report = _spoof_report()
+    assert check_report.validate_agent_report(report) == []
+    burst = next(f for f in report["findings"] if f["rule_id"] == "failed-logon-burst")
+    assert "\n" in burst["observation"]  # permitted plain text, preserved in JSON
+    assert burst["evidence"][0]["details"]["fields"]["TargetUserName"] == SPOOF_NAME
+
+
+def test_text_report_cannot_be_spoofed_by_newlines_or_tabs():
+    from nyyrikki.report import to_text
+
+    text = to_text(_spoof_report(), "synthetic.xml")
+    lines = text.splitlines()
+    assert sum(1 for line in lines if line.startswith("Finding ")) == 2  # only the two real findings
+    assert not any(line.startswith("Finding 9") for line in lines)
+    assert "\t" not in text
+    bs = chr(92)  # a literal backslash: escapes are shown as visible text, on one line
+    assert "alice" + bs + "n" + bs + "nFinding 9: High" in text
+    assert "bob" + bs + "tTAB" + bs + "nNEWLINE" in text
+    # Every line that isn't a fixed heading is indented, so injected text can't pose as one.
+    headings = {"What happened:", "When:", "Account:", "Why it matters:", "Recommended action:",
+                "Evidence references:", "Data warning:", "Limitations:"}
+    for line in lines:
+        if line in headings or not line or line.startswith(("Nyyrikki", "=", "-", "Source:", "Events", "Findings:",
+                                                            "Severity", "Finding ", "To verify", "  ")):
+            continue
+        raise AssertionError(f"unexpected unindented line: {line!r}")

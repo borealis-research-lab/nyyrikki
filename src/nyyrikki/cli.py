@@ -1,4 +1,4 @@
-"""Command-line interface: nyyrikki scan FILE [--json] [--out REPORT.json] | nyyrikki describe."""
+"""Command-line interface: nyyrikki scan FILE [--text] [--out REPORT.json] | nyyrikki describe."""
 
 from __future__ import annotations
 
@@ -24,9 +24,14 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"nyyrikki {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("describe", help="print this agent's Borealis identity (JSON)")
-    scan = sub.add_parser("scan", help="scan an event XML file and report findings")
+    scan = sub.add_parser(
+        "scan",
+        help="scan an event XML file and print a borealis-agent-report/1 JSON report (default) or a summary",
+    )
     scan.add_argument("file", help="event XML exported with wevtutil or Event Viewer")
-    scan.add_argument("--json", action="store_true", help="print the borealis-agent-report/1 JSON instead of the summary")
+    output = scan.add_mutually_exclusive_group()
+    output.add_argument("--text", action="store_true", help="print the human-readable summary instead of JSON")
+    output.add_argument("--json", action="store_true", help="print the JSON report (the default; kept for compatibility)")
     scan.add_argument("--out", metavar="REPORT.json", help="also save the JSON report to this local file (never overwritten)")
     scan.add_argument("--explain", action="store_true", help="ask a local model to explain each finding")
     scan.add_argument("--model", help="local Ollama model name (required with --explain)")
@@ -87,7 +92,8 @@ def main(argv: list[str] | None = None) -> int:
             return _error(f"cannot write report to {out_path}: {exc.strerror or exc}")
         print(f"nyyrikki: report saved to {out_path}", file=sys.stderr)
 
-    sys.stdout.write(to_json(report) if args.json else to_text(report, args.file))
+    # The standard requires exactly one JSON report on stdout; text is opt-in.
+    sys.stdout.write(to_text(report, args.file) if args.text else to_json(report))
     return 0
 
 

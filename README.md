@@ -19,16 +19,17 @@ Export events (reading the Security log needs an administrator terminal), then s
 ```powershell
 mkdir exports
 wevtutil qe Security /f:xml /rd:true /c:5000 > exports\security.xml
-nyyrikki scan exports\security.xml
+nyyrikki scan exports\security.xml --text
 ```
 
 To scan an `.evtx` file exported elsewhere, convert it first with `wevtutil qe file.evtx /lf:true /f:xml > exports\file.xml`.
 
-By default Nyyrikki prints a short human-readable report. Each finding has: what happened, when, the account involved, why it matters, a recommended action, and the record IDs of the supporting events so they can be checked in Event Viewer. Nyyrikki never changes the system.
+By default `nyyrikki scan` prints the JSON report, the machine-readable output other Borealis tools consume. Add `--text` for a short human-readable report. Each finding has: what happened, when, the account involved, why it matters, a recommended action, and the record IDs of the supporting events so they can be checked in Event Viewer. Nyyrikki never changes the system.
 
 | Option | Effect |
 |---|---|
-| `--json` | Print the JSON report instead of the summary |
+| `--text` | Print the human-readable report instead of JSON |
+| `--json` | Print the JSON report (the default; kept for compatibility) |
 | `--out report.json` | Also save the JSON report to a local file. Never overwrites an existing file |
 
 `nyyrikki describe` prints the agent's identity (name, version, responsibility, and the kinds of personal data its reports can contain).
@@ -42,7 +43,9 @@ The report never contains the export's file name or path. It does contain accoun
 
 **Data warnings:** if an event field contains text that looks like instructions (for example to an AI tool), Nyyrikki adds a data warning to the finding. A warning is an indicator for a human to review, not a detection.
 
-Try it with simulated data: `nyyrikki scan tests/fixtures/simulated_attack.xml`.
+Try it with simulated data: `nyyrikki scan tests/fixtures/simulated_attack.xml --text`.
+
+In the text report, any newlines, tabs or control characters taken from events are shown as visible escapes (`\n`, `\t`), so crafted account names can't add lines or imitate report headings. The JSON keeps the original values.
 
 ## Testing on your own computer
 
@@ -53,7 +56,7 @@ Using Claude Code? Paste [SETUP_PROMPT.md](SETUP_PROMPT.md) into it for guided i
 Optional explanation by a local model running in [Ollama](https://ollama.com):
 
 ```bash
-nyyrikki scan exports/security.xml --explain --model <local-model-name>
+nyyrikki scan exports/security.xml --text --explain --model <local-model-name>
 ```
 
 Only localhost model URLs are accepted. Explanations that do not cite the finding's evidence, or cite events outside it, are rejected.

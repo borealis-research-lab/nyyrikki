@@ -182,8 +182,13 @@ def build(
     finished_at: datetime | None = None,
     extensions: dict[str, Any] | None = None,
     run_id: str | None = None,
+    interpretations: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Build a borealis-agent-report/1 report, applying the standard's limits."""
+    """Build a borealis-agent-report/1 report, applying the standard's limits.
+
+    `interpretations` (optional, experimental) maps finding_id to a local-model result. It is
+    stored under extensions.experimental_interpretations, only for findings that remain
+    listed, and counts towards the 10 MiB limit like everything else in the report."""
     created = timestamp(started_at)
     items = _merge_duplicates([finding_dict(f, created) for f in findings])
     findings_total = len(items)
@@ -213,15 +218,34 @@ def build(
         "findings": items,
         "findings_total": findings_total,
     }
-    if extensions:
-        report["extensions"] = extensions
+    sync = _extension_sync(extensions, interpretations)
+    sync(report)
     _apply_errors(report, errors)
     if _size(report) > MAX_REPORT_BYTES:
-        _fit_size(report, errors)
+        _fit_size(report, errors, sync, interpretations or {})
     return report
 
 
-def _fit_size(report: dict[str, Any], errors: list[dict[str, Any]]) -> None:
+def _extension_sync(extensions: dict[str, Any] | None, interpretations: dict[str, dict[str, Any]] | None):
+    """Returns a function that sets report["extensions"] so it holds only interpretations
+    for findings still listed (dropped findings take their interpretations with them)."""
+
+    def sync(report: dict[str, Any]) -> None:
+        merged = dict(extensions or {})
+        if interpretations:
+            listed = {f["finding_id"] for f in report["findings"]}
+            kept = {fid: value for fid, value in interpretations.items() if fid in listed}
+            if kept:
+                merged["experimental_interpretations"] = kept
+        if merged:
+            report["extensions"] = merged
+        else:
+            report.pop("extensions", None)
+
+    return sync
+
+
+def _fit_size(report: dict[str, Any], errors: list[dict[str, Any]], sync, interpretations: dict[str, Any]) -> None:
     """The standard's three size-reduction steps, in order, re-measuring after each."""
     report["findings"] = _rank(report["findings"])
 
@@ -250,7 +274,13 @@ def _fit_size(report: dict[str, Any], errors: list[dict[str, Any]]) -> None:
 
     # Step 3: drop findings from the end of the ranking until the report fits.
     dropped_for_count = report["findings_total"] - len(report["findings"])
-    sizes = [len(json.dumps(f, indent=2).encode("utf-8")) + 6 for f in report["findings"]]
+    # Each finding's share of the report includes its interpretation, if any.
+    sizes = [
+        len(json.dumps(f, indent=2).encode("utf-8")) + 6
+        + (len(json.dumps(interpretations[f["finding_id"]], indent=2).encode("utf-8")) + 30
+           if f["finding_id"] in interpretations else 0)
+        for f in report["findings"]
+    ]
     keep = len(sizes)
     excess = _size(report) - MAX_REPORT_BYTES + 200  # 200 bytes headroom for the error message
     while keep and excess > 0:
@@ -258,6 +288,7 @@ def _fit_size(report: dict[str, Any], errors: list[dict[str, Any]]) -> None:
         excess -= sizes[keep]
     while True:
         report["findings"] = report["findings"][:keep]
+        sync(report)
         dropped = dropped_for_count + len(sizes) - keep
         errors = [e for e in errors if e["code"] != "findings-truncated"]
         errors.append(_error_entry("findings-truncated", f"{dropped} findings dropped (count and size limits)"))
@@ -272,6 +303,7 @@ def _fit_size(report: dict[str, Any], errors: list[dict[str, Any]]) -> None:
         _apply_errors(report, errors)
     if _size(report) > MAX_REPORT_BYTES:
         report["findings"] = []
+        sync(report)
         errors.append(_error_entry("report-too-large", "report could not be fitted within 10 MiB"))
         _apply_errors(report, errors)
 
