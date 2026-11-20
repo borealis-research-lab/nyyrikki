@@ -298,7 +298,7 @@ $windowQuery = "*[System[TimeCreated[@SystemTime>='$(Format-XPathTime $start)' a
 Export-SecurityEvents $windowQuery $scenarioXml
 Write-Ok "Exported test-window events to $scenarioXml"
 
-& $Nyyrikki scan $scenarioXml --out $scenarioReport
+& $Nyyrikki scan $scenarioXml --text --out $scenarioReport
 if ($LASTEXITCODE -ne 0) { Write-Bad 'Nyyrikki failed to scan the export'; exit 1 }
 $report = Get-Content -Raw -Path $scenarioReport | ConvertFrom-Json
 
@@ -359,7 +359,7 @@ if ($IncludeBaseline) {
     if (-not $byRule) { $byRule = 'none' }
     $results.Add("INFO  baseline: $($baseline.counts.events) events scanned in $([math]::Round($elapsed.TotalSeconds, 2)) s; findings: $byRule")
     Write-Note "Baseline: $($baseline.counts.events) events, $([math]::Round($elapsed.TotalSeconds, 2)) s, findings: $byRule"
-    Write-Note "Review them with: .venv\Scripts\nyyrikki scan `"$baselineXml`""
+    Write-Note "Review them with: .venv\Scripts\nyyrikki scan `"$baselineXml`" --text"
 }
 
 # --- 7. Summary (safe to share: no names, IPs, SIDs or event content) ---------------

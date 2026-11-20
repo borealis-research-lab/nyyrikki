@@ -7,13 +7,10 @@ a model's interpretation, which is always kept separate from the evidence.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from nyyrikki.events import Event
-
-AGENT = "nyyrikki"
-
 
 @dataclass
 class Evidence:
@@ -45,23 +42,8 @@ class Finding:
     limitations: str
     interpretation: str | None = None
     interpretation_rejected: str | None = None
+    data_warnings: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def record_ids(self) -> set[int]:
         return {item.record_id for item in self.evidence}
-
-    def to_dict(self) -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "agent": AGENT,
-            "rule_id": self.rule_id,
-            "severity": self.severity,
-            "observation": self.observation,
-            "assessment": self.assessment,
-            "evidence": [vars(item) for item in self.evidence],
-            "recommendation": self.recommendation,
-            "interpretation": self.interpretation,
-            "limitations": self.limitations,
-        }
-        if self.interpretation_rejected:
-            result["interpretation_rejected"] = self.interpretation_rejected
-        return result

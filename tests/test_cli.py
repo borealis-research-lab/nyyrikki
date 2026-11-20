@@ -23,22 +23,18 @@ def run(capsys, *argv):
     return code, out, err
 
 
-# JSON mode
+# JSON mode (borealis-agent-report/1; full conformance is in test_agent_report.py)
 
 
-def test_json_report_has_stable_schema_and_all_rules(capsys):
+def test_json_report_contains_all_rules(capsys):
     code, out, err = run(capsys, "scan", ATTACK, "--json")
     report = json.loads(out)
     assert code == 0 and err == ""
-    assert report["schema_version"] == 1
-    assert report["agent"] == "nyyrikki" and report["version"]
-    assert report["run"]["source"] == ATTACK and report["run"]["generated_at"]
-    assert report["counts"] == {"events": 17, "findings": 5, "high": 3, "medium": 2, "low": 0}
+    assert report["standard"] == "borealis-agent-report/1"
+    assert report["agent"] == {"name": "nyyrikki", "version": "0.2.0"}
+    assert report["findings_total"] == 5 and report["status"] == "ok"
     assert {f["rule_id"] for f in report["findings"]} == ALL_RULES
-    for f in report["findings"]:
-        assert f["evidence"] and f["observation"] and f["recommendation"] and f["severity"]
-        assert all(item["time_created"] for item in f["evidence"])
-        assert f["interpretation"] is None
+    assert "extensions" not in report  # no AI output unless --explain is used
 
 
 def test_json_evidence_points_at_records_in_the_file(capsys):
@@ -46,19 +42,44 @@ def test_json_evidence_points_at_records_in_the_file(capsys):
     _, out, _ = run(capsys, "scan", ATTACK, "--json")
     for f in json.loads(out)["findings"]:
         for item in f["evidence"]:
-            assert f"<EventRecordID>{item['record_id']}</EventRecordID>" in text
+            assert f"<EventRecordID>{item['details']['record_id']}</EventRecordID>" in text
 
 
 def test_json_benign_has_no_findings(capsys):
     _, out, _ = run(capsys, "scan", BENIGN, "--json")
-    assert json.loads(out)["counts"]["findings"] == 0
+    report = json.loads(out)
+    assert report["findings"] == [] and report["findings_total"] == 0
 
 
-# Text mode (default)
+def test_json_is_the_default_output(capsys):
+    _, default_out, _ = run(capsys, "scan", ATTACK)
+    _, json_out, _ = run(capsys, "scan", ATTACK, "--json")
+    default, explicit = json.loads(default_out), json.loads(json_out)
+    assert default["standard"] == "borealis-agent-report/1"
+    for report in (default, explicit):  # identical apart from per-run id and timestamps
+        report.pop("run")
+        for finding in report["findings"]:
+            finding.pop("created_at")
+    assert default == explicit
+
+
+def test_out_with_default_output_prints_json_once(capsys, tmp_path):
+    target = tmp_path / "report.json"
+    code, out, _ = run(capsys, "scan", ATTACK, "--out", str(target))
+    assert code == 0 and json.loads(out)["findings_total"] == 5  # stdout is exactly one JSON report
+
+
+def test_text_and_json_are_mutually_exclusive(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["scan", ATTACK, "--text", "--json"])
+    assert exc.value.code == 2
+
+
+# Text mode (--text)
 
 
 def test_text_summary_lists_findings_by_severity(capsys):
-    code, out, _ = run(capsys, "scan", ATTACK)
+    code, out, _ = run(capsys, "scan", ATTACK, "--text")
     assert code == 0
     assert out.startswith("Nyyrikki Security Report")
     assert "Events analysed: 17" in out and "High:   3" in out and "Medium: 2" in out
@@ -70,7 +91,7 @@ def test_text_summary_lists_findings_by_severity(capsys):
 
 
 def test_text_zero_findings_is_explicit_and_not_reassuring(capsys):
-    _, out, _ = run(capsys, "scan", BENIGN)
+    _, out, _ = run(capsys, "scan", BENIGN, "--text")
     assert "Findings:        0" in out and "does not mean the system is safe" in out
 
 
@@ -83,7 +104,7 @@ def test_text_handles_missing_fields(capsys, tmp_path):
     )
     path = tmp_path / "sparse.xml"
     path.write_text(xml)
-    code, out, _ = run(capsys, "scan", str(path))
+    code, out, _ = run(capsys, "scan", str(path), "--text")
     assert code == 0 and "Finding 1: Medium" in out and "Account:" not in out
 
 
@@ -92,11 +113,11 @@ def test_text_handles_missing_fields(capsys, tmp_path):
 
 def test_out_saves_valid_json_and_still_prints_summary(capsys, tmp_path):
     target = tmp_path / "reports" / "report.json"  # parent created
-    code, out, err = run(capsys, "scan", ATTACK, "--out", str(target))
+    code, out, err = run(capsys, "scan", ATTACK, "--text", "--out", str(target))
     assert code == 0
     assert out.startswith("Nyyrikki Security Report")
     assert "report saved" in err
-    assert json.loads(target.read_text())["counts"]["findings"] == 5
+    assert json.loads(target.read_text())["findings_total"] == 5
 
 
 def test_out_refuses_to_overwrite(capsys, tmp_path):

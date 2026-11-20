@@ -26,7 +26,7 @@ My Windows security logs contain personal information: user names, computer name
 2. **Get Nyyrikki.** Clone the repository into a `nyyrikki` folder, unless that folder already exists. If it does, ask me what to do and don't overwrite it.
 3. **Install it.** In the `nyyrikki` folder, create a virtual environment and install the package with its test tools. On Windows: `py -m venv .venv`, then `.venv\Scripts\python -m pip install -e ".[dev]"`. Explain that this installs it only inside the project folder.
 4. **Run the automated tests:** `.venv\Scripts\python -m pytest`. Tell me how many passed. If any failed, show me the failure and stop.
-5. **Demonstrate it on simulated data:** `.venv\Scripts\nyyrikki scan tests\fixtures\simulated_attack.xml`. Walk me through one finding: what happened, why it matters, and how the record IDs point to the evidence. Then run it on `tests\fixtures\benign.xml` and point out that normal activity gives no findings.
+5. **Demonstrate it on simulated data:** `.venv\Scripts\nyyrikki scan tests\fixtures\simulated_attack.xml --text`. Walk me through one finding: what happened, why it matters, and how the record IDs point to the evidence. Then run it on `tests\fixtures\benign.xml` and point out that normal activity gives no findings.
 6. **Pre-check the real test (read-only):** `powershell -ExecutionPolicy Bypass -File scripts\real-test.ps1 -CheckOnly`. Explain anything that failed.
 7. **Explain the real test before I run it.** Summarise what `scripts\real-test.ps1` will do. Read the script and describe it honestly:
    - It creates a temporary test account that expires after an hour, and adds it to Administrators for a moment.

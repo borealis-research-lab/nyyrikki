@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nyyrikki"
-version = "0.1.0"
+version = "0.2.0"
 description = "A local AI security scout focused on identifying potentially suspicious activity in local security events."
 readme = "README.md"
 license = { file = "LICENSE" }

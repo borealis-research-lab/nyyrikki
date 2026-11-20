@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:borealis:agent-report:1",
+  "title": "Borealis agent report v1",
+  "description": "Structure of borealis-agent-report/1. The invariants in agent-report-v1.md (status/error consistency, error_counts sums, finding_id and digest recomputation, truncation rules, uniqueness) are also normative and are not expressible in JSON Schema; see tools/check_report.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standard", "agent", "run", "source", "status", "errors", "errors_total", "error_counts", "findings", "findings_total"],
+  "properties": {
+    "standard": {"const": "borealis-agent-report/1"},
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"$ref": "#/$defs/agentName"},
+        "version": {"type": "string", "minLength": 1, "maxLength": 32, "pattern": "^[\\u0020-\\u007e]+$", "not": {"pattern": "\\n"}}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "started_at", "finished_at"],
+      "properties": {
+        "id": {"$ref": "#/$defs/uuid4"},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "finished_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "scope"],
+      "properties": {
+        "type": {"$ref": "#/$defs/token"},
+        "description": {"$ref": "#/$defs/text500"},
+        "scope": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "id"],
+            "properties": {
+              "kind": {"$ref": "#/$defs/token"},
+              "id": {"$ref": "#/$defs/token"},
+              "count": {"$ref": "#/$defs/count"}
+            }
+          }
+        }
+      }
+    },
+    "status": {"enum": ["ok", "partial", "error"]},
+    "errors": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"$ref": "#/$defs/errorCode"},
+          "message": {"$ref": "#/$defs/text500"},
+          "ref": {"$ref": "#/$defs/ref"}
+        }
+      }
+    },
+    "errors_total": {"$ref": "#/$defs/count"},
+    "error_counts": {
+      "type": "object",
+      "maxProperties": 100,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9-]{0,63}$", "not": {"pattern": "\\n"}},
+      "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}
+    },
+    "findings": {"type": "array", "maxItems": 1000, "items": {"$ref": "#/$defs/finding"}},
+    "findings_total": {"$ref": "#/$defs/count"},
+    "extensions": {"type": "object"}
+  },
+  "$defs": {
+    "agentName": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,39}$", "not": {"pattern": "\\n"}},
+    "uuid4": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "not": {"pattern": "\\n"}},
+    "timestamp": {"type": "string", "maxLength": 27, "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$", "not": {"pattern": "\\n"}},
+    "token": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$", "not": {"pattern": "\\n"}},
+    "errorCode": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "allOf": [{"not": {"const": "other-codes"}}, {"not": {"pattern": "\\n"}}]},
+    "count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "text500": {"type": "string", "maxLength": 500, "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f]*$"},
+    "text2000": {"type": "string", "maxLength": 2000, "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f]*$"},
+    "ref": {"type": "string", "maxLength": 1065, "pattern": "^[a-z][a-z0-9-]{0,63}:[^\\u0000-\\u001f\\u007f]{1,1000}$", "not": {"pattern": "\\n"}},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "not": {"pattern": "\\n"}},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/ref"},
+        "timestamp": {"$ref": "#/$defs/timestamp"},
+        "details": {"type": "object"}
+      }
+    },
+    "dataWarning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "refs", "refs_total", "warning"],
+      "properties": {
+        "field": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$", "not": {"pattern": "\\n"}},
+        "refs": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/ref"}},
+        "refs_total": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "warning": {"$ref": "#/$defs/text500"}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "created_at", "rule_id", "severity", "observation", "assessment", "recommendation", "limitations", "evidence", "evidence_total", "evidence_refs_digest"],
+      "dependentRequired": {"data_warnings": ["data_warnings_total"], "data_warnings_total": ["data_warnings"]},
+      "properties": {
+        "finding_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,39}:[a-z][a-z0-9-]{0,63}:[0-9a-f]{16}$", "not": {"pattern": "\\n"}},
+        "created_at": {"$ref": "#/$defs/timestamp"},
+        "rule_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "not": {"pattern": "\\n"}},
+        "severity": {"enum": ["low", "medium", "high"]},
+        "observation": {"$ref": "#/$defs/text2000"},
+        "assessment": {"$ref": "#/$defs/text2000"},
+        "recommendation": {"$ref": "#/$defs/text2000"},
+        "limitations": {"$ref": "#/$defs/text2000"},
+        "evidence": {"type": "array", "minItems": 1, "maxItems": 500, "items": {"$ref": "#/$defs/evidence"}},
+        "evidence_total": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "evidence_refs_digest": {"$ref": "#/$defs/sha256"},
+        "evidence_details_omitted": {"const": true},
+        "data_warnings": {"type": "array", "maxItems": 50, "items": {"$ref": "#/$defs/dataWarning"}},
+        "data_warnings_total": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}
+      }
+    }
+  }
+}
