@@ -8,9 +8,35 @@ It is a project of [Borealis Research](https://github.com/borealis-research-lab)
 
 ## Status
 
-Repository bootstrap. The security agent itself is not yet implemented, and no detection functionality exists.
+Early MVP. Nyyrikki scans Windows Security events exported to XML and applies five fixed detection rules (see [docs/detections.md](docs/detections.md)). The rules have been tested against simulated events only; they are not calibrated against real attacks.
 
-The first supported operating system, event source, local model and model runtime have not yet been selected.
+Not yet supported: reading the live event log, continuous monitoring, other operating systems. No local model has been selected; Ollama is supported as an optional runtime.
+
+## Usage
+
+Export events (reading the Security log needs an administrator terminal), then scan the export:
+
+```powershell
+mkdir exports
+wevtutil qe Security /f:xml /rd:true /c:5000 > exports\security.xml
+nyyrikki scan exports\security.xml
+```
+
+To scan an `.evtx` file exported elsewhere, convert it first with `wevtutil qe file.evtx /lf:true /f:xml > exports\file.xml`.
+
+The output is JSON. Each finding contains the observation, the rule's assessment, the supporting events (by `EventRecordID`), a recommendation for a human, and the rule's limitations. Nyyrikki never changes the system.
+
+Try it with simulated data: `nyyrikki scan tests/fixtures/simulated_attack.xml`.
+
+Optional explanation by a local model running in [Ollama](https://ollama.com):
+
+```bash
+nyyrikki scan exports/security.xml --explain --model <local-model-name>
+```
+
+Only localhost model URLs are accepted. Explanations that do not cite the finding's evidence, or cite events outside it, are rejected.
+
+Real event exports contain personal data. `exports/` is git-ignored; do not commit or share them.
 
 ## Single responsibility
 

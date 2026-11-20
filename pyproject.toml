@@ -20,6 +20,9 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 
+[project.scripts]
+nyyrikki = "nyyrikki.cli:main"
+
 [project.urls]
 Repository = "https://github.com/borealis-research-lab/nyyrikki"
 

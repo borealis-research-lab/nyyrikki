@@ -1,12 +1,12 @@
 # Nyyrikki scope
 
-- **Input:** local security events from one initially selected source. The source has not yet been selected.
-- **Task:** identify potentially suspicious activity.
-- **Optional local AI:** a local model may help interpret event context. It must not invent evidence.
-- **Output:** a structured finding tied to the source event or events.
+- **Input:** Windows Security events exported to XML (with `wevtutil` or Event Viewer). This is the initially selected source. The live event log isn't read yet.
+- **Task:** identify potentially suspicious activity. The current rules are listed in [detections.md](detections.md).
+- **Optional local AI:** a local model may help interpret event context. It must not invent evidence, and its output is checked against the cited events.
+- **Output:** a structured finding tied to the source event or events, by `EventRecordID`.
 - **Execution:** local.
-- **Model and runtime:** none selected yet.
-- **System changes:** none. Nyyrikki does not change the system automatically.
+- **Model and runtime:** no model has been selected. Ollama is supported as an optional local runtime, and the user chooses the model.
+- **System changes:** none. Nyyrikki only reads the file it is given.
 
 ## Non-goals
 
