@@ -97,7 +97,7 @@ def _accounts(evidence: list[dict[str, Any]]) -> str:
 
 
 def to_text(report: dict[str, Any], source_label: str) -> str:
-    """`source_label` is shown on the local terminal only; it never enters the JSON report."""
+    """`source_label` is a generic identifier (the CLI passes `security-event-export`), never a path."""
     findings = sorted(report["findings"], key=lambda f: SEVERITIES.index(f["severity"]))
     counts = {sev: sum(1 for f in findings if f["severity"] == sev) for sev in SEVERITIES}
     events = sum(item.get("count", 0) for item in report["source"]["scope"])
