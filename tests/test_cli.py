@@ -156,3 +156,15 @@ def test_explain_refuses_non_local_model_url(capsys):
         capsys, "scan", BENIGN, "--explain", "--model", "m", "--ollama-url", "https://api.example.com"
     )
     assert code == 2 and "non-local" in err
+
+
+def test_text_report_never_shows_the_input_path_or_file_name(capsys, tmp_path):
+    private = tmp_path / "Users" / "someone-private"
+    private.mkdir(parents=True)
+    path = private / "my-private-security-export.xml"
+    path.write_text(Path(ATTACK).read_text())
+    code, out, _ = run(capsys, "scan", str(path), "--text")
+    assert code == 0
+    assert "Source:          security-event-export" in out
+    assert "someone-private" not in out and "my-private-security-export" not in out
+    assert str(tmp_path) not in out

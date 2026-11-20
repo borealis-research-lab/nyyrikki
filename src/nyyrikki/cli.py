@@ -93,7 +93,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"nyyrikki: report saved to {out_path}", file=sys.stderr)
 
     # The standard requires exactly one JSON report on stdout; text is opt-in.
-    sys.stdout.write(to_text(report, args.file) if args.text else to_json(report))
+    # The text report shows the same generic source identifier as the JSON report, never the
+    # input path: copied or shared text reports must not disclose user names or folders.
+    source_label = report["source"]["scope"][0]["id"]
+    sys.stdout.write(to_text(report, source_label) if args.text else to_json(report))
     return 0
 
 
