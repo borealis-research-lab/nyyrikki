@@ -124,14 +124,8 @@ def test_unreadable_input_exits_with_code_2(capsys, tmp_path):
     assert code == 2 and out == "" and "invalid XML" in err
 
 
-def test_explain_requires_model(capsys):
-    with pytest.raises(SystemExit) as exc:
-        main(["scan", BENIGN, "--explain"])
-    assert exc.value.code == 2
-
-
 def test_explain_refuses_non_local_model_url(capsys):
     code, _, err = run(
-        capsys, "scan", BENIGN, "--explain", "--model", "m", "--ollama-url", "https://api.example.com"
+        capsys, "scan", BENIGN, "--explain", "--model-url", "https://api.example.com"
     )
     assert code == 2 and "non-local" in err

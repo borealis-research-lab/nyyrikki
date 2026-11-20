@@ -8,7 +8,7 @@ from pathlib import Path
 
 from nyyrikki import __version__
 from nyyrikki.events import ParseError, load_events
-from nyyrikki.explain import DEFAULT_OLLAMA_URL, ExplainError, explain, ollama_generator
+from nyyrikki.explain import DEFAULT_MODEL_URL, ExplainError, explain, local_model_generator
 from nyyrikki.report import build_report, to_json, to_text
 from nyyrikki.rules import run_rules
 
@@ -25,8 +25,12 @@ def _parser() -> argparse.ArgumentParser:
     scan.add_argument("--json", action="store_true", help="print the structured JSON report instead of the summary")
     scan.add_argument("--out", metavar="REPORT.json", help="also save the JSON report to this local file (never overwritten)")
     scan.add_argument("--explain", action="store_true", help="ask a local model to explain each finding")
-    scan.add_argument("--model", help="local Ollama model name (required with --explain)")
-    scan.add_argument("--ollama-url", default=DEFAULT_OLLAMA_URL, help="local Ollama URL (localhost only)")
+    scan.add_argument(
+        "--model-url",
+        default=DEFAULT_MODEL_URL,
+        help="local OpenAI-compatible model server, e.g. llama-server (localhost only)",
+    )
+    scan.add_argument("--model", help="model name, if the local server hosts several")
     return parser
 
 
@@ -44,8 +48,6 @@ def _save(path: Path, content: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
-    if args.explain and not args.model:
-        parser.error("--explain requires --model")
 
     out_path = Path(args.out) if args.out else None
     if out_path is not None and out_path.exists():
@@ -60,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.explain:
         try:
-            generate = ollama_generator(args.model, args.ollama_url)
+            generate = local_model_generator(args.model_url, args.model)
         except ExplainError as exc:
             return _error(str(exc))
         findings = [explain(finding, generate) for finding in findings]

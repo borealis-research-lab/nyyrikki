@@ -10,7 +10,7 @@ It is a project of [Borealis Research](https://github.com/borealis-research-lab)
 
 Early MVP. Nyyrikki scans Windows Security events exported to XML and applies five fixed detection rules (see [docs/detections.md](docs/detections.md)). The rules have been tested against simulated events only; they are not calibrated against real attacks.
 
-Not yet supported: reading the live event log, continuous monitoring, other operating systems. No local model has been selected; Ollama is supported as an optional runtime.
+Not yet supported: reading the live event log, continuous monitoring, other operating systems. No local model has been selected yet; llama.cpp (`llama-server`) is the adopted local runtime, and model candidates are being benchmarked.
 
 ## Usage
 
@@ -39,13 +39,14 @@ Try it with simulated data: `nyyrikki scan tests/fixtures/simulated_attack.xml`.
 
 Using Claude Code? Paste [SETUP_PROMPT.md](SETUP_PROMPT.md) into it for guided installation and testing. The prompt tells Claude never to read your real security logs, because anything Claude reads leaves your computer.
 
-Optional explanation by a local model running in [Ollama](https://ollama.com):
+Optional explanation by a small model running locally in [llama.cpp](https://github.com/ggml-org/llama.cpp)'s `llama-server` (any local OpenAI-compatible server works):
 
 ```bash
-nyyrikki scan exports/security.xml --explain --model <local-model-name>
+llama-server -m <model.gguf> --host 127.0.0.1 --port 8080
+nyyrikki scan exports/security.xml --explain
 ```
 
-Only localhost model URLs are accepted. Explanations that do not cite the finding's evidence, or cite events outside it, are rejected.
+Only localhost model URLs are accepted (`--model-url`). Explanations that do not cite the finding's evidence, cite events outside it, or mention IP addresses absent from it are rejected.
 
 Real event exports and reports contain personal data (user names, computer names, IP addresses). `exports/` is git-ignored; do not commit or share them, and do not paste them into cloud AI tools.
 
