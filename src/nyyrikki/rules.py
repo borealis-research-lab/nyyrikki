@@ -154,6 +154,11 @@ def _is_privileged_group(event: Event) -> bool:
     )
 
 
+def _member(event: Event) -> str:
+    name = event.get("MemberName")
+    return name if name and name != "-" else event.get("MemberSid") or "(unknown)"
+
+
 def privileged_group_add(events: list[Event]) -> list[Finding]:
     fields = ("MemberName", "MemberSid", "TargetUserName", "TargetDomainName", "TargetSid", "SubjectUserName")
     return [
@@ -163,7 +168,7 @@ def privileged_group_add(events: list[Event]) -> list[Finding]:
             assessment="Potentially suspicious: adding members to privileged groups grants administrative control.",
             recommendation="Confirm the membership change was authorised and is still needed.",
             observation=(
-                f"'{e.get('MemberName') or e.get('MemberSid')}' was added to privileged group "
+                f"'{_member(e)}' was added to privileged group "
                 f"'{e.get('TargetUserName')}' by '{e.get('SubjectUserName')}' (event {e.event_id})."
             ),
             evidence=[Evidence.from_event(e, fields)],

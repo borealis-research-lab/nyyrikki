@@ -148,3 +148,8 @@ def test_every_finding_cites_only_records_present_in_the_input():
     }
     for finding in findings:
         assert finding.record_ids <= input_ids
+
+
+def test_group_add_names_member_by_sid_when_name_is_dash():
+    [finding] = privileged_group_add(events(ex.group_add(4, 0)))
+    assert "'S-1-5-21-1-2-3-1010' was added" in finding.observation

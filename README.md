@@ -24,9 +24,20 @@ nyyrikki scan exports\security.xml
 
 To scan an `.evtx` file exported elsewhere, convert it first with `wevtutil qe file.evtx /lf:true /f:xml > exports\file.xml`.
 
-The output is JSON. Each finding contains the observation, the rule's assessment, the supporting events (by `EventRecordID`), a recommendation for a human, and the rule's limitations. Nyyrikki never changes the system.
+By default Nyyrikki prints a short human-readable report. Each finding has: what happened, when, the account involved, why it matters, a recommended action, and the record IDs of the supporting events so they can be checked in Event Viewer. Nyyrikki never changes the system.
+
+| Option | Effect |
+|---|---|
+| `--json` | Print the structured JSON report (versioned schema, `schema_version: 1`) instead of the summary |
+| `--out report.json` | Also save the JSON report to a local file. Never overwrites an existing file |
 
 Try it with simulated data: `nyyrikki scan tests/fixtures/simulated_attack.xml`.
+
+## Testing on your own computer
+
+`scripts/real-test.ps1` runs a controlled, harmless test on a real Windows computer. It uses a temporary test account to generate the events each rule looks for, then checks that Nyyrikki finds them. See the comment at the top of the script for exactly what it does. Start with `-CheckOnly`, which makes no changes.
+
+Using Claude Code? Paste [SETUP_PROMPT.md](SETUP_PROMPT.md) into it for guided installation and testing. The prompt tells Claude never to read your real security logs, because anything Claude reads leaves your computer.
 
 Optional explanation by a local model running in [Ollama](https://ollama.com):
 
@@ -36,7 +47,7 @@ nyyrikki scan exports/security.xml --explain --model <local-model-name>
 
 Only localhost model URLs are accepted. Explanations that do not cite the finding's evidence, or cite events outside it, are rejected.
 
-Real event exports contain personal data. `exports/` is git-ignored; do not commit or share them.
+Real event exports and reports contain personal data (user names, computer names, IP addresses). `exports/` is git-ignored; do not commit or share them, and do not paste them into cloud AI tools.
 
 ## Single responsibility
 
