@@ -42,3 +42,14 @@ The model receives only that finding's evidence, labelled as untrusted data, and
 An accepted explanation appears under `interpretation`, separate from the evidence. Nyyrikki never acts on model output.
 
 Citation checking catches some kinds of invention by the model, but not all. A cited explanation can still misread the evidence.
+
+## Data warnings
+
+Event fields such as account, workstation or computer names can be set by an attacker. If a field in a finding's evidence contains text that looks like instructions (e.g. "ignore previous instructions", "reply only", `SYSTEM:`, fake `[record:...]` citations), the finding carries a **data warning** naming the field and records.
+
+A data warning:
+- is an indicator for a human, **not** a detection, and doesn't change severity;
+- means the text was treated as untrusted data and never followed;
+- may itself be worth investigating, because legitimate names don't normally contain instructions.
+
+The patterns are a fixed list in `src/nyyrikki/annotations.py`. They will miss some phrasings, so a missing warning doesn't mean a field is harmless.

@@ -28,8 +28,19 @@ By default Nyyrikki prints a short human-readable report. Each finding has: what
 
 | Option | Effect |
 |---|---|
-| `--json` | Print the structured JSON report (versioned schema, `schema_version: 1`) instead of the summary |
+| `--json` | Print the JSON report instead of the summary |
 | `--out report.json` | Also save the JSON report to a local file. Never overwrites an existing file |
+
+`nyyrikki describe` prints the agent's identity (name, version, responsibility, and the kinds of personal data its reports can contain).
+
+The JSON report follows the [Borealis agent report standard](https://github.com/borealis-research-lab/.github/tree/main/standards) (`borealis-agent-report/1`), so other Borealis tools such as Borealis Node can validate and combine it:
+- each finding has a deterministic `finding_id`;
+- evidence references take the form `windows-security:record:<EventRecordID>`, with the event's fields under `details`;
+- `status`, `errors` and the totals say if anything was truncated.
+
+The report never contains the export's file name or path. It does contain account names, IP addresses and computer names from the events, so review it before sharing.
+
+**Data warnings:** if an event field contains text that looks like instructions (for example to an AI tool), Nyyrikki adds a data warning to the finding. A warning is an indicator for a human to review, not a detection.
 
 Try it with simulated data: `nyyrikki scan tests/fixtures/simulated_attack.xml`.
 

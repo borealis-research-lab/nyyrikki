@@ -15,4 +15,6 @@ Nyyrikki has one responsibility: monitor a narrowly selected source of local sec
 
 Nyyrikki is a Specialist Agent in [Borealis Architecture v1](https://github.com/borealis-research-lab/.github/blob/main/architecture/borealis-architecture-v1.md). Follow that document, but do not build Node, Core or Worker functionality in this repository: Nyyrikki must stay independently runnable.
 
+JSON output must conform to `borealis-agent-report/1`. The standard is implemented in `src/nyyrikki/standard.py`. `tests/standards/` holds vendored, unmodified copies of the standard's checker and vectors; never edit them, re-copy them instead.
+
 Run tests with `python -m pytest`.

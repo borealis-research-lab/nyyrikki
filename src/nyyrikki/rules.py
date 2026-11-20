@@ -11,6 +11,7 @@ from datetime import timedelta
 from typing import Callable
 
 from nyyrikki.events import Event
+from nyyrikki.annotations import annotate
 from nyyrikki.findings import Evidence, Finding
 
 FAILED_LOGON = 4625
@@ -212,4 +213,4 @@ def run_rules(events: list[Event]) -> list[Finding]:
     findings: list[Finding] = []
     for rule in RULES:
         findings.extend(rule(events))
-    return findings
+    return annotate(findings)
