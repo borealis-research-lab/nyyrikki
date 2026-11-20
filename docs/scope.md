@@ -5,7 +5,7 @@
 - **Optional local AI:** a local model may help interpret event context. It must not invent evidence, and its output is checked against the cited events.
 - **Output:** a structured finding tied to the source event or events, by `EventRecordID`.
 - **Execution:** local.
-- **Model and runtime:** no model has been selected. Ollama is supported as an optional local runtime, and the user chooses the model.
+- **Model and runtime:** llama.cpp is the adopted local runtime (via its OpenAI-compatible `llama-server`). No model has been selected; Qwen3.5 0.8B and 2B are being benchmarked.
 - **System changes:** none. Nyyrikki only reads the file it is given.
 
 ## Non-goals

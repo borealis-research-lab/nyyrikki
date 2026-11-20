@@ -1,0 +1,57 @@
+{
+  "run": "20261120-142038",
+  "purpose": "Baseline screening of local models for Nyyrikki's optional explanation step",
+  "data": "Simulated only (benchmarks/model_benchmark.py scenarios + tests/fixtures/simulated_attack.xml); 12 findings per model, 2 with prompt injection",
+  "prompt": {
+    "version": "v1",
+    "system_prompt_sha256": "f68281792b5f821ac74a26efadc15528bd9e021ab8bb61c9c015c99851efc2b2",
+    "source": "src/nyyrikki/explain.py at the commit that adds this manifest"
+  },
+  "runtime": {
+    "name": "llama.cpp llama-server",
+    "release": "b12569",
+    "commit": "4c4a0f0a4",
+    "asset": "llama-b12569-bin-win-cpu-x64.zip",
+    "asset_sha256": "13e21b29dab7f618dde92eb33324d26ba785bf42188bfc8866119269dab20613"
+  },
+  "settings": {
+    "threads": 4,
+    "context": 4096,
+    "parallel": 1,
+    "temperature": 0,
+    "max_tokens": 300,
+    "enable_thinking": false,
+    "jinja": true,
+    "runs_per_finding": 1,
+    "gpu": "none (CPU build)"
+  },
+  "models": [
+    {
+      "file": "Qwen3.5-0.8B-Q4_K_M.gguf",
+      "source": "huggingface.co/unsloth/Qwen3.5-0.8B-GGUF",
+      "license": "apache-2.0",
+      "sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517"
+    },
+    {
+      "file": "Qwen3.5-2B-Q4_K_M.gguf",
+      "source": "huggingface.co/unsloth/Qwen3.5-2B-GGUF",
+      "license": "apache-2.0",
+      "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"
+    }
+  ],
+  "hardware": {
+    "cpu": "Intel Core i5-11300H (4 cores / 8 threads)",
+    "gpu": "Intel Iris Xe (not used)",
+    "ram_gb": 32,
+    "os": "Windows 11 Home build 26200"
+  },
+  "software": {
+    "python": "3.12.6",
+    "nyyrikki": "0.1.0"
+  },
+  "excluded": [
+    "server logs (contain local paths)",
+    "model weights",
+    "real security exports"
+  ]
+}

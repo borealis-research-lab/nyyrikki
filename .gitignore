@@ -47,3 +47,6 @@ models/
 *.pt
 *.pth
 *.onnx
+
+# Benchmark server logs (contain local paths)
+benchmarks/results/*.log

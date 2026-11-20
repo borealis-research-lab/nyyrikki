@@ -32,12 +32,13 @@ All thresholds are constants in `src/nyyrikki/rules.py`. They have been tested o
 
 ## Optional local explanation
 
-With `--explain --model NAME`, each finding is sent to a model running locally in [Ollama](https://ollama.com). Only `localhost` URLs are accepted.
+With `--explain`, each finding is sent to a model running in a local OpenAI-compatible server, such as llama.cpp's `llama-server` at `http://127.0.0.1:8080`. Only `localhost` URLs are accepted (`--model-url`).
 
-The model receives only that finding's evidence, labelled as untrusted data, and must cite records as `[record:<id>]`. The explanation is rejected, and recorded under `interpretation_rejected`, if any of these apply:
+The model receives the rules as a system message and only that finding's evidence, labelled as untrusted data, as a separate user message. It must cite records as `[record:<id>]`. The explanation is rejected, and recorded under `interpretation_rejected`, if any of these apply:
 - it is empty or too long;
 - it cites no records;
-- it cites a record that isn't in the evidence.
+- it cites a record that isn't in the evidence;
+- it mentions an IP address that isn't in the evidence.
 
 An accepted explanation appears under `interpretation`, separate from the evidence. Nyyrikki never acts on model output.
 
