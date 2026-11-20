@@ -24,7 +24,7 @@ dev = ["pytest>=7"]
 nyyrikki = "nyyrikki.cli:main"
 
 [project.urls]
-Repository = "https://github.com/borealis-research-lab/nyyrikki"
+Repository = "https://github.com/borealis-research-lab/security-event-analysis"
 
 [tool.setuptools.packages.find]
 where = ["src"]
