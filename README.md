@@ -2,7 +2,7 @@
 
 Nyyrikki is a small local AI security scout that identifies potentially suspicious activity in local security events.
 
-It is a project of [Borealis Research](https://github.com/borealis-research), an independent open-source research laboratory exploring distributed computing, specialised AI agents and resilient digital infrastructure.
+It is a project of [Borealis Research](https://github.com/borealis-research-lab), an independent open-source research laboratory exploring distributed computing, specialised AI agents and resilient digital infrastructure.
 
 > **Experimental.** Nyyrikki is not a production security product. Do not rely on it to protect any system.
 
